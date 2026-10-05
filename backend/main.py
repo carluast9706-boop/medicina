@@ -1,6 +1,7 @@
 import os
 from typing import List, Optional
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
@@ -350,10 +351,30 @@ def get_admin_stats(admin: User = Depends(get_current_superadmin), db: Session =
         ]
     }
 
-# Serve Frontend static assets safely if running standalone locally
-static_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if not os.environ.get("VERCEL") and os.path.exists(os.path.join(static_dir, "index.html")):
-    try:
-        app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
-    except Exception:
-        pass
+# =========================================================
+# FRONTEND STATIC ASSETS & ROOT HANDLER (Vercel & Local)
+# =========================================================
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+@app.get("/", response_class=FileResponse)
+def serve_index_html():
+    index_file = os.path.join(ROOT_DIR, "index.html")
+    if os.path.exists(index_file):
+        return FileResponse(index_file)
+    raise HTTPException(status_code=404, detail="index.html no encontrado")
+
+@app.get("/{file_path:path}", response_class=FileResponse)
+def serve_static_asset(file_path: str):
+    # Do not intercept /api routes
+    if file_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="Ruta API no encontrada")
+    
+    target = os.path.join(ROOT_DIR, file_path)
+    if os.path.exists(target) and os.path.isfile(target):
+        return FileResponse(target)
+    
+    # Fallback to index.html for SPA routing
+    index_file = os.path.join(ROOT_DIR, "index.html")
+    if os.path.exists(index_file):
+        return FileResponse(index_file)
+    raise HTTPException(status_code=404, detail="Archivo no encontrado")
