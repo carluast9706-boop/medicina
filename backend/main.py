@@ -22,31 +22,34 @@ class VercelPathMiddleware:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if scope["type"] == "http":
-            headers = dict(scope.get("headers", []))
+            query_bytes = scope.get("query_string", b"")
+            query_str = query_bytes.decode("latin-1") if query_bytes else ""
             
-            # Check x-now-route-matches (Vercel standard for regex rewrites)
-            route_matches = headers.get(b"x-now-route-matches", b"").decode("latin-1")
             matched_subpath = None
-            if route_matches:
-                params = urllib.parse.parse_qs(route_matches)
-                if "1" in params and params["1"]:
-                    matched_subpath = params["1"][0]
-                elif "path" in params and params["path"]:
-                    matched_subpath = params["path"][0]
-
-            original_url = headers.get(b"x-vercel-original-url", b"").decode("latin-1")
-            forwarded_uri = headers.get(b"x-forwarded-uri", b"").decode("latin-1")
-            matched_path = headers.get(b"x-matched-path", b"").decode("latin-1")
-            path = scope.get("path", "")
+            if "_route_path=" in query_str:
+                params = urllib.parse.parse_qs(query_str)
+                if "_route_path" in params and params["_route_path"]:
+                    matched_subpath = params["_route_path"][0]
+                    # Remove _route_path from query parameters
+                    filtered_params = {k: v for k, v in params.items() if k != "_route_path"}
+                    new_query = urllib.parse.urlencode(filtered_params, doseq=True)
+                    scope["query_string"] = new_query.encode("latin-1")
             
+            if not matched_subpath:
+                headers = dict(scope.get("headers", []))
+                route_matches = headers.get(b"x-now-route-matches", b"").decode("latin-1")
+                if route_matches:
+                    params = urllib.parse.parse_qs(route_matches)
+                    if "1" in params and params["1"]:
+                        matched_subpath = params["1"][0]
+                    elif "match" in params and params["match"]:
+                        matched_subpath = params["match"][0]
+                    elif "path" in params and params["path"]:
+                        matched_subpath = params["path"][0]
+
+            path = scope.get("path", "")
             if matched_subpath:
                 raw_path = "/api/" + matched_subpath.lstrip("/")
-            elif original_url and not original_url.startswith("/api/index"):
-                raw_path = original_url
-            elif forwarded_uri and not forwarded_uri.startswith("/api/index"):
-                raw_path = forwarded_uri
-            elif matched_path and not matched_path.startswith("/api/index"):
-                raw_path = matched_path
             else:
                 raw_path = path
 
