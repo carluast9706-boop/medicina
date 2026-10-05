@@ -13,7 +13,59 @@ from .ai_service import get_master_gemini_api_key, analyze_prescription_with_gem
 # Create Database Tables in Neon
 Base.metadata.create_all(bind=engine)
 
+import urllib.parse
+from starlette.types import ASGIApp, Scope, Receive, Send
+
+class VercelPathMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] == "http":
+            headers = dict(scope.get("headers", []))
+            
+            # Check x-now-route-matches (Vercel standard for regex rewrites)
+            route_matches = headers.get(b"x-now-route-matches", b"").decode("latin-1")
+            matched_subpath = None
+            if route_matches:
+                params = urllib.parse.parse_qs(route_matches)
+                if "1" in params and params["1"]:
+                    matched_subpath = params["1"][0]
+                elif "path" in params and params["path"]:
+                    matched_subpath = params["path"][0]
+
+            original_url = headers.get(b"x-vercel-original-url", b"").decode("latin-1")
+            forwarded_uri = headers.get(b"x-forwarded-uri", b"").decode("latin-1")
+            matched_path = headers.get(b"x-matched-path", b"").decode("latin-1")
+            path = scope.get("path", "")
+            
+            if matched_subpath:
+                raw_path = "/api/" + matched_subpath.lstrip("/")
+            elif original_url and not original_url.startswith("/api/index"):
+                raw_path = original_url
+            elif forwarded_uri and not forwarded_uri.startswith("/api/index"):
+                raw_path = forwarded_uri
+            elif matched_path and not matched_path.startswith("/api/index"):
+                raw_path = matched_path
+            else:
+                raw_path = path
+
+            if "?" in raw_path:
+                raw_path = raw_path.split("?")[0]
+                
+            if not raw_path:
+                raw_path = "/"
+                
+            if not raw_path.startswith("/"):
+                raw_path = "/" + raw_path
+                
+            scope["path"] = raw_path
+            scope["raw_path"] = raw_path.encode("latin-1")
+            
+        await self.app(scope, receive, send)
+
 app = FastAPI(title="PharmaAlarm AI Backend", version="2.0.0")
+app.add_middleware(VercelPathMiddleware)
 
 # Enable CORS for Mobile & Web clients
 app.add_middleware(
