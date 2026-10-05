@@ -13,48 +13,26 @@ const STOCK_IMAGES = {
   inyeccion: 'https://images.unsplash.com/photo-1579154204601-01588f351e67?w=500&auto=format&fit=crop&q=60'
 };
 
-const INITIAL_MEDICINES = [
-  {
-    id: 'med-1',
-    name: 'Amoxicilina + Ácido Clavulánico (Jarabe)',
-    type: 'jarabe',
-    doseValue: '7.5',
-    doseUnit: 'ml',
-    frequencyHours: 8,
-    firstDoseTime: '08:00',
-    durationDays: '7',
-    foodRelation: 'con',
-    photoUrl: STOCK_IMAGES.jarabe,
-    alarmTone: 'urgent-siren',
-    notes: 'Agitar bien el frasco antes de dosificar con jeringa.',
-    startDate: new Date().toISOString()
-  },
-  {
-    id: 'med-2',
-    name: 'Ibuprofeno 400mg',
-    type: 'pastilla',
-    doseValue: '1',
-    doseUnit: 'pastilla(s)',
-    frequencyHours: 8,
-    firstDoseTime: '09:00',
-    durationDays: '5',
-    foodRelation: 'despues',
-    photoUrl: STOCK_IMAGES.pastilla,
-    alarmTone: 'hospital-beeps',
-    notes: 'Tomar con medio vaso de agua después del desayuno/comida.',
-    startDate: new Date().toISOString()
-  }
-];
+const INITIAL_MEDICINES = [];
 
 // =========================================================
 // APPLICATION STATE
 // =========================================================
+// Filter out any legacy sample/mock medicines from previous sessions
+let storedMeds = JSON.parse(localStorage.getItem('pharma_medicines')) || [];
+storedMeds = storedMeds.filter(m => m.id !== 'med-1' && m.id !== 'med-2' && !String(m.name).includes('Amoxicilina + Ácido'));
+localStorage.setItem('pharma_medicines', JSON.stringify(storedMeds));
+
+let storedHistory = JSON.parse(localStorage.getItem('pharma_history')) || [];
+storedHistory = storedHistory.filter(h => h.medId !== 'med-1' && h.medId !== 'med-2');
+localStorage.setItem('pharma_history', JSON.stringify(storedHistory));
+
 const state = {
   currentView: 'view-today',
   user: JSON.parse(localStorage.getItem('pharma_user')) || null,
   token: localStorage.getItem('pharma_jwt') || null,
-  medicines: JSON.parse(localStorage.getItem('pharma_medicines')) || INITIAL_MEDICINES,
-  historyLogs: JSON.parse(localStorage.getItem('pharma_history')) || [],
+  medicines: storedMeds,
+  historyLogs: storedHistory,
   settings: JSON.parse(localStorage.getItem('pharma_settings')) || {
     apiKey: '',
     voiceAnnouncement: true,
@@ -76,6 +54,9 @@ const state = {
 // API HELPER (Fetch with JWT Authentication & Remote URL support)
 // =========================================================
 function getApiBaseUrl() {
+  if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' && window.location.port !== '8000' || window.Capacitor || !window.location.origin.includes('vercel.app')) {
+    return localStorage.getItem('pharma_api_url') || 'https://medicina-t3co.vercel.app';
+  }
   return localStorage.getItem('pharma_api_url') || '';
 }
 
@@ -1544,9 +1525,16 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('📄 Reporte médico descargado');
   });
 
-  // Initial Sync from Python SQL Backend
-  syncFromBackend();
+  // Initial Sync from Python SQL Backend & Mandatory Auth Check
   updateUserAuthUI();
+  if (state.token) {
+    syncFromBackend();
+  } else {
+    const authModal = document.getElementById('modal-auth');
+    if (authModal) {
+      authModal.classList.remove('hidden');
+    }
+  }
   startAlarmClockTicker();
   renderCurrentView();
 });

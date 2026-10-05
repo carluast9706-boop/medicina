@@ -1,0 +1,9 @@
+{
+  "appId": "com.pharmaalarm.ai",
+  "appName": "PharmaAlarm AI",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true
+  }
+}

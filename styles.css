@@ -42,19 +42,44 @@
   --safe-top: env(safe-area-inset-top, 16px);
 }
 
-/* Dark Mode Preference or manual toggle */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-main: #090d16;
-    --bg-card: #131b2e;
-    --bg-card-subtle: #1c2742;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --border-light: #1e293b;
-    --primary-light: rgba(13, 148, 136, 0.2);
-    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
-  }
+/* Default Medical Clean Theme (Always Light Mode) */
+:root {
+  --primary: #0d9488;
+  --primary-dark: #0f766e;
+  --primary-light: #ccfbf1;
+  --primary-glow: rgba(13, 148, 136, 0.2);
+
+  --accent-emerald: #10b981;
+  --accent-cyan: #06b6d4;
+  --accent-indigo: #4f46e5;
+  --accent-amber: #d97706;
+  --accent-rose: #e11d48;
+  --accent-crimson: #be123c;
+
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-card-subtle: #f1f5f9;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+
+  --border-light: #e2e8f0;
+  --border-focus: #0d9488;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 14px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+  --shadow-alarm: 0 0 50px rgba(225, 29, 72, 0.4);
+
+  --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+  --safe-top: env(safe-area-inset-top, 16px);
 }
 
 * {
@@ -78,14 +103,16 @@ body {
 /* Mobile Frame Container */
 .app-container {
   width: 100%;
-  max-width: 540px;
+  max-width: 480px;
   min-height: 100vh;
   background: var(--bg-main);
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.05);
   padding-bottom: calc(75px + var(--safe-bottom));
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* =========================================================
@@ -98,73 +125,76 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(12px + var(--safe-top)) 18px 14px;
-  background: rgba(255, 255, 255, 0.85);
+  padding: calc(8px + var(--safe-top)) 12px 10px;
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-light);
-}
-
-@media (prefers-color-scheme: dark) {
-  .app-header {
-    background: rgba(19, 27, 46, 0.85);
-  }
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
 }
 
 .logo-badge {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent-cyan) 100%);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  box-shadow: 0 4px 12px var(--primary-glow);
+  font-size: 17px;
+  box-shadow: 0 4px 10px var(--primary-glow);
 }
 
 .app-title {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 800;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .badge-ai {
-  font-size: 10px;
+  font-size: 8.5px;
   text-transform: uppercase;
   font-weight: 700;
   background: linear-gradient(135deg, var(--accent-indigo), var(--primary));
   color: white;
-  padding: 2px 7px;
+  padding: 1.5px 5px;
   border-radius: var(--radius-full);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .app-subtitle {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
+  flex-shrink: 0;
 }
 
 .btn-icon {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
   border-radius: var(--radius-full);
   background: var(--bg-card);
   border: 1px solid var(--border-light);
@@ -172,7 +202,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 13px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -522,12 +552,6 @@ body {
   padding: 2px 8px;
   border-radius: var(--radius-full);
   margin-top: 3px;
-}
-
-@media (prefers-color-scheme: dark) {
-  .dose-qty-badge {
-    color: #5eead4;
-  }
 }
 
 .dose-food-note {
@@ -1172,12 +1196,6 @@ body {
   align-items: center;
   padding: 6px 12px calc(6px + var(--safe-bottom));
   z-index: 50;
-}
-
-@media (prefers-color-scheme: dark) {
-  .bottom-nav {
-    background: rgba(19, 27, 46, 0.92);
-  }
 }
 
 .nav-item {
