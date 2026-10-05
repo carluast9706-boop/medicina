@@ -407,14 +407,3 @@ def get_admin_stats(admin: User = Depends(get_current_superadmin), db: Session =
 # Mount Router with BOTH /api prefix and root prefix
 app.include_router(router, prefix="/api")
 app.include_router(router, prefix="")
-
-@app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
-async def catch_all(request: Request, full_path: str):
-    return {
-        "msg": "Catch all triggered - route not matched",
-        "full_path": full_path,
-        "scope_path": request.scope.get("path"),
-        "method": request.method,
-        "headers": dict(request.headers),
-        "url": str(request.url)
-    }
