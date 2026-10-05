@@ -351,30 +351,7 @@ def get_admin_stats(admin: User = Depends(get_current_superadmin), db: Session =
         ]
     }
 
-# =========================================================
-# FRONTEND STATIC ASSETS & ROOT HANDLER (Vercel & Local)
-# =========================================================
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-@app.get("/", response_class=FileResponse)
-def serve_index_html():
-    index_file = os.path.join(ROOT_DIR, "index.html")
-    if os.path.exists(index_file):
-        return FileResponse(index_file)
-    raise HTTPException(status_code=404, detail="index.html no encontrado")
-
-@app.get("/{file_path:path}", response_class=FileResponse)
-def serve_static_asset(file_path: str):
-    # Do not intercept /api routes
-    if file_path.startswith("api/"):
-        raise HTTPException(status_code=404, detail="Ruta API no encontrada")
-    
-    target = os.path.join(ROOT_DIR, file_path)
-    if os.path.exists(target) and os.path.isfile(target):
-        return FileResponse(target)
-    
-    # Fallback to index.html for SPA routing
-    index_file = os.path.join(ROOT_DIR, "index.html")
-    if os.path.exists(index_file):
-        return FileResponse(index_file)
-    raise HTTPException(status_code=404, detail="Archivo no encontrado")
+# Root API Health Check
+@app.get("/")
+def api_root():
+    return {"message": "PharmaAlarm AI Backend is running with Neon PostgreSQL", "status": "online"}
