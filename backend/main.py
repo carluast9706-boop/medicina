@@ -210,7 +210,7 @@ def register(data: RegisterSchema, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    token = create_access_token({"sub": user.id, "email": user.email, "role": user.role})
+    token = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role})
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -229,7 +229,7 @@ def login(data: LoginSchema, db: Session = Depends(get_db)):
     if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos.")
 
-    token = create_access_token({"sub": user.id, "email": user.email, "role": user.role})
+    token = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role})
     return {
         "access_token": token,
         "token_type": "bearer",

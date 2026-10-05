@@ -51,7 +51,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
         raise credentials_exception
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_sub": False})
         user_id_raw = payload.get("sub")
         if user_id_raw is None:
             raise credentials_exception
