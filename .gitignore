@@ -1,0 +1,19 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite
+pharma.db
+
+# Environment variables
+.env
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
