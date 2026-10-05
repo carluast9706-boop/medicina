@@ -1492,16 +1492,17 @@ body {
 
 .modal-sheet {
   width: 100%;
-  max-width: 520px;
-  max-height: 90vh;
+  max-width: 500px;
+  max-height: 88vh;
   background: var(--bg-card);
   border-top-left-radius: var(--radius-xl);
   border-top-right-radius: var(--radius-xl);
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 @media (min-width: 600px) {
@@ -1511,15 +1512,18 @@ body {
 }
 
 .modal-header {
-  padding: 18px 20px;
+  padding: 16px 18px;
   border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
+  background: #ffffff;
+  z-index: 10;
 }
 
 .modal-header h3 {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -1537,28 +1541,31 @@ body {
 }
 
 .modal-form-body, .modal-body-scroll {
-  padding: 18px 20px;
+  padding: 16px 18px 24px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  flex: 1 1 auto;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
 }
 
 .form-group label {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--text-main);
 }
 
 .form-group input,
 .form-group select {
-  padding: 10px 14px;
+  padding: 11px 14px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
   background: var(--bg-card-subtle);
@@ -1566,6 +1573,8 @@ body {
   font-size: 14px;
   font-family: inherit;
   outline: none;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-group input:focus,
@@ -1577,8 +1586,15 @@ body {
 
 .form-row-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
+}
+
+@media (min-width: 480px) {
+  .form-row-2 {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
 }
 
 /* Presentation Selector */
@@ -1630,23 +1646,25 @@ body {
 .medicine-photo-picker {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   background: var(--bg-card-subtle);
   border: 1px solid var(--border-light);
   padding: 10px;
   border-radius: var(--radius-md);
+  box-sizing: border-box;
 }
 
 .photo-preview-thumb {
-  width: 60px;
-  height: 60px;
+  width: 54px;
+  height: 54px;
+  min-width: 54px;
   border-radius: var(--radius-sm);
   background: var(--bg-card);
   border: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 20px;
   color: var(--text-muted);
   overflow: hidden;
 }
@@ -1662,6 +1680,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
 .btn-file-upload {
@@ -1674,15 +1693,18 @@ body {
   text-align: center;
   cursor: pointer;
   display: inline-block;
+  white-space: nowrap;
 }
 
 .modal-footer {
-  padding: 14px 20px;
+  padding: 12px 18px calc(14px + var(--safe-bottom));
   border-top: 1px solid var(--border-light);
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  background: var(--bg-card);
+  background: #ffffff;
+  flex-shrink: 0;
+  z-index: 10;
 }
 
 .btn-primary {
