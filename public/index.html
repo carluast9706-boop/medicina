@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>PharmaAlarm AI - Alarma y Control Inteligente de Medicamentos</title>
+  
+  <!-- PWA & Mobile Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PharmaAlarm">
+  <meta name="theme-color" content="#0d9488">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app-container" class="app-container">
+    
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-badge">
+          <i class="fa-solid fa-pills-circle-check"></i>
+        </div>
+        <div>
+          <h1 class="app-title">PharmaAlarm <span class="badge-ai">AI Specialist</span></h1>
+          <p class="app-subtitle" id="current-date-text">Lunes, 5 de Octubre</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <button id="btn-sound-test" class="btn-icon" title="Probar Alarma Contundente" aria-label="Probar sonido">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+        <button id="btn-superadmin" class="btn-icon hidden" title="Panel de Super Administrador" aria-label="Super Administrador">
+          <i class="fa-solid fa-crown" style="color: #f59e0b;"></i>
+        </button>
+        <button id="btn-user-auth" class="btn-icon" title="Iniciar Sesión / Cuenta" aria-label="Usuario">
+          <i class="fa-solid fa-user"></i>
+        </button>
+        <button id="btn-settings" class="btn-icon" title="Ajustes de Sonido" aria-label="Ajustes">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Emergency / Quick Notification Banner -->
+    <div id="notification-permission-banner" class="alert-banner hidden">
+      <i class="fa-solid fa-bell-ring"></i>
+      <div class="alert-content">
+        <strong>Activar Alertas de Sistema</strong>
+        <span>Permite notificaciones y sonido continuo en tu dispositivo móvil.</span>
+      </div>
+      <button id="btn-enable-notifications" class="btn-banner">Activar</button>
+    </div>
+
+    <!-- Main Content Views -->
+    <main class="main-content">
+      
+      <!-- VIEW 1: HOY / CRONOGRAMA DE TOMAS (DEFAULT) -->
+      <section id="view-today" class="view-section active">
+        <!-- Next Dose Spotlight Card -->
+        <div id="next-dose-spotlight" class="spotlight-card">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Timeline Section -->
+        <div class="section-header">
+          <h2><i class="fa-regular fa-clock"></i> Tomas del Día</h2>
+          <span class="badge-count" id="today-count-badge">0 pendientes</span>
+        </div>
+        
+        <div id="timeline-container" class="timeline-list">
+          <!-- Dynamic dose items -->
+        </div>
+      </section>
+
+      <!-- VIEW 2: MIS MEDICAMENTOS (INVENTARIO Y DOSIS) -->
+      <section id="view-medicines" class="view-section">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-prescription-bottle-medical"></i> Mis Medicamentos</h2>
+          <button id="btn-add-medicine-manual" class="btn-primary-sm">
+            <i class="fa-solid fa-plus"></i> Nuevo
+          </button>
+        </div>
+
+        <div id="medicines-grid" class="medicines-grid">
+          <!-- Dynamic medicine cards -->
+        </div>
+      </section>
+
+      <!-- VIEW 3: ESCANEAR RECETA CON IA (VISION AGENT) -->
+      <section id="view-scanner" class="view-section">
+        <div class="scanner-hero">
+          <div class="scanner-icon-bubble">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <h2>Escanear Receta Médica con IA</h2>
+          <p>Toma una foto de la receta o caja de medicamento. El Agente Especialista Farmacéutico extraerá automáticamente nombres, dosis exactas (ml / pastillas), intervalos y creará tus alarmas.</p>
+        </div>
+
+        <div class="scanner-box">
+          <div class="upload-dropzone" id="recipe-dropzone">
+            <input type="file" id="recipe-file-input" accept="image/*" capture="environment" class="file-input-hidden">
+            <div class="dropzone-content" id="dropzone-prompt">
+              <i class="fa-solid fa-camera-retro"></i>
+              <h3>Subir o Tomar Foto</h3>
+              <p>Toca aquí para abrir la cámara o galería</p>
+              <div class="badge-pills-row">
+                <span><i class="fa-solid fa-file-medical"></i> Recetas</span>
+                <span><i class="fa-solid fa-box"></i> Cajas</span>
+                <span><i class="fa-solid fa-bottle-droplet"></i> Frascos</span>
+              </div>
+            </div>
+            <div class="dropzone-preview hidden" id="dropzone-preview">
+              <img id="scanned-image-preview" src="" alt="Receta escaneada">
+              <button id="btn-retake-photo" class="btn-retake"><i class="fa-solid fa-rotate-left"></i> Cambiar Foto</button>
+            </div>
+          </div>
+
+          <div class="scanner-actions">
+            <button id="btn-process-recipe" class="btn-action-hero" disabled>
+              <i class="fa-solid fa-brain"></i> Analizar Receta con Agente IA
+            </button>
+            <button id="btn-demo-recipe" class="btn-secondary-link">
+              <i class="fa-solid fa-flask"></i> Probar con Receta Médica de Demostración
+            </button>
+          </div>
+
+          <!-- Loading state with AI Pharmacist steps -->
+          <div id="scanner-loading" class="scanner-loading hidden">
+            <div class="spinner-pulse"></div>
+            <h4 id="scanner-loading-status">Especialista Farmacéutico analizando receta...</h4>
+            <p class="loading-subtext">Identificando principios activos, mililitros, unidades y frecuencias horarias.</p>
+          </div>
+
+          <!-- Extracted Result Preview -->
+          <div id="scanner-results" class="scanner-results hidden">
+            <div class="result-header">
+              <h3><i class="fa-solid fa-clipboard-check"></i> Medicamentos Detectados</h3>
+              <span class="badge-success" id="detected-count-badge">2 Encontrados</span>
+            </div>
+            <div id="detected-medicines-list" class="detected-list"></div>
+            <div class="result-actions">
+              <button id="btn-confirm-detected" class="btn-action-hero">
+                <i class="fa-solid fa-bell"></i> Programar Todas las Alarmas
+              </button>
+              <button id="btn-cancel-detected" class="btn-secondary-link">Descartar</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: ASISTENTE FARMACÉUTICO IA (CHAT & CONSEJOS) -->
+      <section id="view-assistant" class="view-section">
+        <div class="chat-header-bar">
+          <div class="chat-avatar">
+            <i class="fa-solid fa-user-doctor"></i>
+          </div>
+          <div>
+            <h3>Dr. Farma AI</h3>
+            <p class="status-online"><span class="dot-online"></span> Especialista Farmacéutico de Guardia</p>
+          </div>
+        </div>
+
+        <div class="quick-prompts-bar">
+          <button class="quick-chip" data-prompt="¿Puedo tomar Paracetamol e Ibuprofeno juntos?">Interacciones comunes</button>
+          <button class="quick-chip" data-prompt="¿Cómo medir correctamente 7.5 ml de jarabe para un niño?">Medir jarabe en ml</button>
+          <button class="quick-chip" data-prompt="¿Qué debo hacer si olvidé tomar una dosis de mi antibiótico?">Dosis olvidada</button>
+          <button class="quick-chip" data-prompt="¿Se deben tomar los medicamentos en ayunas o con comida?">Alimentos y medicamentos</button>
+        </div>
+
+        <div id="chat-messages" class="chat-messages-container">
+          <!-- Chat history will be loaded here -->
+        </div>
+
+        <form id="chat-form" class="chat-input-area">
+          <input type="text" id="chat-input" placeholder="Pregunta sobre tus medicamentos cargados (dosis, ml, comidas...)" autocomplete="off">
+          <button type="submit" id="btn-send-chat" class="btn-send" aria-label="Enviar mensaje">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </form>
+      </section>
+
+      <!-- VIEW 5: HISTORIAL Y REGISTRO DE ADHERENCIA -->
+      <section id="view-history" class="view-section">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-chart-pie"></i> Adherencia y Registro</h2>
+          <button id="btn-export-history" class="btn-secondary-sm"><i class="fa-solid fa-file-export"></i> Reporte Médico</button>
+        </div>
+
+        <div class="adherence-stats-grid">
+          <div class="stat-card">
+            <span class="stat-value text-teal" id="stat-adherence-rate">100%</span>
+            <span class="stat-label">Adherencia Semanal</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value text-emerald" id="stat-taken-count">0</span>
+            <span class="stat-label">Dosis Tomadas</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value text-amber" id="stat-missed-count">0</span>
+            <span class="stat-label">Dosis Pospuestas</span>
+          </div>
+        </div>
+
+        <div class="history-list-card">
+          <h3><i class="fa-solid fa-list-check"></i> Historial de Tomas Recientes</h3>
+          <div id="history-log-list" class="history-log-list">
+            <!-- Dynamic history records -->
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (Mobile Optimized) -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-view="view-today">
+        <i class="fa-solid fa-calendar-day"></i>
+        <span>Hoy</span>
+      </button>
+      <button class="nav-item" data-view="view-medicines">
+        <i class="fa-solid fa-pills"></i>
+        <span>Medicinas</span>
+      </button>
+      <button class="nav-item nav-scanner-highlight" data-view="view-scanner">
+        <div class="nav-scanner-btn">
+          <i class="fa-solid fa-camera-viewfinder"></i>
+        </div>
+        <span>Escanear</span>
+      </button>
+      <button class="nav-item" data-view="view-assistant">
+        <i class="fa-solid fa-user-doctor"></i>
+        <span>Dr. AI</span>
+      </button>
+      <button class="nav-item" data-view="view-history">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Historial</span>
+      </button>
+    </nav>
+
+    <!-- ============================================================== -->
+    <!-- FULLSCREEN CONTUNDENT ALARM MODAL (ALARMA SONORA Y VISUAL) -->
+    <!-- ============================================================== -->
+    <div id="alarm-modal" class="alarm-fullscreen-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="alarm-med-name">
+      <div class="alarm-pulse-rings"></div>
+      
+      <div class="alarm-content-box">
+        <div class="alarm-top-indicator">
+          <div class="alarm-siren-badge">
+            <i class="fa-solid fa-bell ring-animation"></i> ¡HORA DE TU MEDICAMENTO!
+          </div>
+          <p class="alarm-clock-time" id="alarm-live-clock">12:00 PM</p>
+        </div>
+
+        <!-- Medicine Visual Card with Photo -->
+        <div class="alarm-medicine-card">
+          <div class="alarm-image-wrapper">
+            <img id="alarm-med-image" src="" alt="Foto del Medicamento">
+            <div class="alarm-form-tag" id="alarm-form-tag">
+              <i class="fa-solid fa-capsules"></i> Pastilla
+            </div>
+          </div>
+          
+          <div class="alarm-med-details">
+            <h2 id="alarm-med-name">Paracetamol 500mg</h2>
+            <div class="alarm-dose-highlight">
+              <span class="alarm-dose-amount" id="alarm-dose-amount">1 Comprimido</span>
+              <span class="alarm-dose-type" id="alarm-dose-type">(Vía Oral)</span>
+            </div>
+            <p class="alarm-instructions" id="alarm-instructions">
+              <i class="fa-solid fa-utensils"></i> Tomar con abundante agua después de comer.
+            </p>
+          </div>
+        </div>
+
+        <!-- Sound & Voice Status -->
+        <div class="alarm-sound-control">
+          <button id="btn-toggle-alarm-sound" class="btn-sound-toggle">
+            <i class="fa-solid fa-volume-high"></i> Silenciar Alarma Sonora
+          </button>
+        </div>
+
+        <!-- Actions: Tomado o Posponer -->
+        <div class="alarm-action-buttons">
+          <button id="btn-alarm-take" class="btn-alarm-confirm">
+            <i class="fa-solid fa-check-double"></i> ¡YA ME LO TOMÉ!
+          </button>
+          <div class="alarm-secondary-actions">
+            <button id="btn-alarm-snooze-5" class="btn-alarm-snooze">
+              <i class="fa-solid fa-clock-rotate-left"></i> Posponer 5 min
+            </button>
+            <button id="btn-alarm-snooze-15" class="btn-alarm-snooze">
+              <i class="fa-solid fa-clock-rotate-left"></i> Posponer 15 min
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- MODAL: AGREGAR / EDITAR MEDICAMENTO MANUAL -->
+    <!-- ============================================================== -->
+    <div id="modal-medicine-form" class="modal-overlay hidden">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <h3 id="form-modal-title"><i class="fa-solid fa-prescription-bottle-medical"></i> Registrar Medicamento</h3>
+          <button class="btn-close-modal" id="btn-close-form"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        <form id="medicine-form" class="modal-form-body">
+          <input type="hidden" id="med-id">
+
+          <!-- Name & Category -->
+          <div class="form-group">
+            <label for="med-name">Nombre del Medicamento *</label>
+            <input type="text" id="med-name" required placeholder="Ej: Ibuprofeno, Amoxicilina, Jarabe Tos...">
+          </div>
+
+          <!-- Presentation Type -->
+          <div class="form-group">
+            <label>Tipo de Presentación *</label>
+            <div class="presentation-selector">
+              <label class="presentation-option">
+                <input type="radio" name="presentation-type" value="pastilla" checked>
+                <div class="option-card">
+                  <i class="fa-solid fa-tablets"></i>
+                  <span>Pastilla / Cápsula</span>
+                </div>
+              </label>
+              <label class="presentation-option">
+                <input type="radio" name="presentation-type" value="jarabe">
+                <div class="option-card">
+                  <i class="fa-solid fa-bottle-droplet"></i>
+                  <span>Jarabe / Líquido</span>
+                </div>
+              </label>
+              <label class="presentation-option">
+                <input type="radio" name="presentation-type" value="gotas">
+                <div class="option-card">
+                  <i class="fa-solid fa-eye-dropper"></i>
+                  <span>Gotas</span>
+                </div>
+              </label>
+              <label class="presentation-option">
+                <input type="radio" name="presentation-type" value="inyeccion">
+                <div class="option-card">
+                  <i class="fa-solid fa-syringe"></i>
+                  <span>Inyectable</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Dose Details: ml or portions -->
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="med-dose-value" id="label-dose-value">Cantidad de Dosis *</label>
+              <input type="text" id="med-dose-value" required placeholder="Ej: 5 (ml) o 1 (pastilla)">
+            </div>
+            <div class="form-group">
+              <label for="med-dose-unit">Unidad de Medida *</label>
+              <select id="med-dose-unit">
+                <option value="pastilla(s)">Pastilla / Comprimido(s)</option>
+                <option value="cápsula(s)">Cápsula(s)</option>
+                <option value="ml">ml (Mililitros de jarabe)</option>
+                <option value="cucharadita(s) (5ml)">Cucharadita (5ml)</option>
+                <option value="cucharada(s) (15ml)">Cucharada (15ml)</option>
+                <option value="gota(s)">Gota(s)</option>
+                <option value="ampolla(s)">Ampolla / Inyección</option>
+                <option value="puff(s)">Puff / Inhalación</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Frequency & Schedule -->
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="med-frequency">Frecuencia / Intervalo *</label>
+              <select id="med-frequency">
+                <option value="4">Cada 4 horas (6 veces al día)</option>
+                <option value="6">Cada 6 horas (4 veces al día)</option>
+                <option value="8" selected>Cada 8 horas (3 veces al día)</option>
+                <option value="12">Cada 12 horas (2 veces al día)</option>
+                <option value="24">Cada 24 horas (1 vez al día)</option>
+                <option value="custom">Horarios Específicos Personalizados</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="med-first-dose-time">Hora de Primera Toma *</label>
+              <input type="time" id="med-first-dose-time" required value="08:00">
+            </div>
+          </div>
+
+          <!-- Duration in days -->
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="med-duration">Duración del Tratamiento</label>
+              <select id="med-duration">
+                <option value="3">3 días</option>
+                <option value="5">5 días</option>
+                <option value="7" selected>7 días (1 semana)</option>
+                <option value="10">10 días</option>
+                <option value="14">14 días (2 semanas)</option>
+                <option value="30">30 días (1 mes)</option>
+                <option value="cronico">Tratamiento Continuo / Crónico</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="med-food-relation">Instrucción con Alimentos</label>
+              <select id="med-food-relation">
+                <option value="despues">Después de comer</option>
+                <option value="con">Junto con la comida</option>
+                <option value="ayunas">En ayunas (antes de comer)</option>
+                <option value="indiferente">Indiferente / En cualquier momento</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Photo of medicine -->
+          <div class="form-group">
+            <label>Foto del Medicamento / Caja</label>
+            <div class="medicine-photo-picker">
+              <div class="photo-preview-thumb" id="form-photo-preview">
+                <i class="fa-solid fa-image"></i>
+              </div>
+              <div class="photo-picker-btns">
+                <label class="btn-file-upload">
+                  <i class="fa-solid fa-camera"></i> Tomar / Subir Foto
+                  <input type="file" id="med-photo-input" accept="image/*" class="file-input-hidden">
+                </label>
+                <button type="button" id="btn-select-stock-photo" class="btn-secondary-sm">
+                  <i class="fa-solid fa-icons"></i> Elegir Imagen Médica
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alarm Sound Mode -->
+          <div class="form-group">
+            <label for="med-alarm-tone">Tono de Alarma Contundente</label>
+            <select id="med-alarm-tone">
+              <option value="urgent-siren">🚨 Sirena Médica Urgente (Máximo volumen e insistencia)</option>
+              <option value="hospital-beeps">🏥 Pitido Hospitalario Contundente</option>
+              <option value="digital-chime">🔔 Timbre Digital Progresivo</option>
+              <option value="voice-assistant">🗣️ Lectura por Voz + Campana Médica</option>
+            </select>
+          </div>
+
+          <!-- Submit buttons -->
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" id="btn-cancel-form">Cancelar</button>
+            <button type="submit" class="btn-primary" id="btn-save-medicine">
+              <i class="fa-solid fa-floppy-disk"></i> Guardar y Activar Alarmas
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- MODAL: AJUSTES / API / CONFIGURACIÓN DE VOZ Y ALARMA -->
+    <!-- ============================================================== -->
+    <div id="modal-settings" class="modal-overlay hidden">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-sliders"></i> Ajustes de PharmaAlarm AI</h3>
+          <button class="btn-close-modal" id="btn-close-settings"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body-scroll">
+          <div class="settings-group">
+            <h4><i class="fa-solid fa-microchip"></i> Motor de Inteligencia Artificial</h4>
+            <p class="settings-desc">Puedes usar la clave de Google Gemini API para extracción multimodal avanzada en tiempo real de recetas médicas y consultas especializadas.</p>
+            <div class="form-group">
+              <label for="gemini-api-key">Gemini API Key (Opcional):</label>
+              <input type="password" id="gemini-api-key" placeholder="AIzaSy...">
+              <small class="helper-text">Si no ingresas clave, el Agente usará el motor de parsing farmacéutico de alta precisión integrado localmente.</small>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h4><i class="fa-solid fa-bullhorn"></i> Alarma y Asistencia por Voz</h4>
+            <div class="setting-toggle-row">
+              <div>
+                <strong>Llamada por Voz (Text-to-Speech)</strong>
+                <p>El asistente dirá el nombre y dosis exacta al sonar la alarma.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="setting-voice-announcement" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="setting-toggle-row">
+              <div>
+                <strong>Vibración Continua en Móviles</strong>
+                <p>Vibra con patrón insistente en Android y Apple.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="setting-vibration" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h4><i class="fa-solid fa-mobile-screen-button"></i> Compatibilidad Móvil</h4>
+            <p class="settings-desc">Para instalar como aplicación en tu pantalla de inicio:</p>
+            <ul class="mobile-instructions">
+              <li><strong>En iPhone / iPad (iOS):</strong> Toca el botón <em>Compartir</em> <i class="fa-solid fa-arrow-up-from-bracket"></i> y selecciona <em>"Agregar a Inicio"</em>.</li>
+              <li><strong>En Android:</strong> Toca los tres puntos del navegador <i class="fa-solid fa-ellipsis-vertical"></i> y elige <em>"Instalar aplicación"</em>.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-primary" id="btn-save-settings">Guardar Ajustes</button>
+        </div>
+    <!-- ============================================================== -->
+    <!-- MODAL: AUTENTICACIÓN (LOGIN & REGISTRO DE USUARIOS) -->
+    <!-- ============================================================== -->
+    <div id="modal-auth" class="modal-overlay hidden">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <h3 id="auth-modal-title"><i class="fa-solid fa-user-lock"></i> Mi Cuenta PharmaAlarm</h3>
+          <button class="btn-close-modal" id="btn-close-auth"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- If logged in state -->
+        <div id="auth-logged-in-view" class="modal-body-scroll hidden">
+          <div class="user-profile-card">
+            <div class="user-avatar-circle" id="profile-avatar">
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <div class="user-profile-info">
+              <h4 id="profile-name">Carlos</h4>
+              <p id="profile-email">usuario@correo.com</p>
+              <span class="pill-badge" id="profile-role">Paciente</span>
+            </div>
+          </div>
+          <div class="modal-footer" style="padding: 10px 0; border: none;">
+            <button type="button" class="btn-secondary" id="btn-logout" style="color: var(--accent-rose);">
+              <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+            </button>
+          </div>
+        </div>
+
+        <!-- If not logged in state (Tabs: Login / Register) -->
+        <div id="auth-forms-view" class="modal-body-scroll">
+          <div class="auth-tabs">
+            <button type="button" class="auth-tab-btn active" id="tab-login-btn">Iniciar Sesión</button>
+            <button type="button" class="auth-tab-btn" id="tab-register-btn">Crear Cuenta</button>
+          </div>
+
+          <!-- Form Login -->
+          <form id="form-login" class="auth-form">
+            <div class="form-group">
+              <label for="login-email">Correo Electrónico</label>
+              <input type="email" id="login-email" required placeholder="tu@correo.com">
+            </div>
+            <div class="form-group">
+              <label for="login-password">Contraseña</label>
+              <input type="password" id="login-password" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn-action-hero" style="margin-top: 10px;">
+              <i class="fa-solid fa-right-to-bracket"></i> Entrar a mi Cuenta
+            </button>
+            <p style="text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+              Admin por defecto: <strong>admin@pharma.com</strong> / <strong>admin123</strong>
+            </p>
+          </form>
+
+          <!-- Form Register -->
+          <form id="form-register" class="auth-form hidden">
+            <div class="form-group">
+              <label for="reg-name">Nombre Completo</label>
+              <input type="text" id="reg-name" required placeholder="Ej: Carlos Gómez">
+            </div>
+            <div class="form-group">
+              <label for="reg-email">Correo Electrónico</label>
+              <input type="email" id="reg-email" required placeholder="tu@correo.com">
+            </div>
+            <div class="form-group">
+              <label for="reg-password">Contraseña Segura</label>
+              <input type="password" id="reg-password" required placeholder="Mínimo 6 caracteres">
+            </div>
+            <button type="submit" class="btn-action-hero" style="margin-top: 10px;">
+              <i class="fa-solid fa-user-plus"></i> Registrarme
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- MODAL: PANEL DE SUPERADMINISTRADOR (CONFIGURACIÓN GEMINI MASTER) -->
+    <!-- ============================================================== -->
+    <div id="modal-superadmin" class="modal-overlay hidden">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-crown" style="color: #f59e0b;"></i> Panel de Super Administrador</h3>
+          <button class="btn-close-modal" id="btn-close-superadmin"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body-scroll">
+          
+          <!-- Master Gemini API Config Box -->
+          <div class="settings-group" style="background: var(--bg-card-subtle); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+            <h4><i class="fa-solid fa-key text-teal"></i> Clave Master de Google Gemini API</h4>
+            <p class="settings-desc">
+              Como Superusuario, aquí configuras la clave de IA del sistema. Todos los pacientes registrados utilizarán este motor centralizado para el escaneo de recetas y el asistente farmacéutico sin necesidad de configurar nada individualmente.
+            </p>
+            <form id="form-master-gemini" class="form-group">
+              <label for="master-gemini-key">Google Gemini API Key:</label>
+              <input type="password" id="master-gemini-key" placeholder="AIzaSy...">
+              <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <button type="submit" class="btn-primary-sm">
+                  <i class="fa-solid fa-floppy-disk"></i> Guardar Clave Master en SQL
+                </button>
+                <span id="gemini-key-status-badge" class="pill-badge" style="align-self: center;">Verificando...</span>
+              </div>
+            </form>
+          </div>
+
+          <!-- System Stats from SQL -->
+          <div class="settings-group">
+            <h4><i class="fa-solid fa-chart-column"></i> Métricas del Sistema (Base de Datos SQL)</h4>
+            <div class="adherence-stats-grid" style="margin-top: 8px;">
+              <div class="stat-card">
+                <span class="stat-value text-teal" id="admin-stat-users">0</span>
+                <span class="stat-label">Usuarios Totales</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-value text-emerald" id="admin-stat-meds">0</span>
+                <span class="stat-label">Medicamentos SQL</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-value text-amber" id="admin-stat-logs">0</span>
+                <span class="stat-label">Tomas Registradas</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Users Directory Table -->
+          <div class="settings-group">
+            <h4><i class="fa-solid fa-users"></i> Directorio de Usuarios Registrados</h4>
+            <div id="admin-users-table" class="history-log-list" style="margin-top: 8px; max-height: 200px; overflow-y: auto;">
+              <!-- Users dynamic list -->
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="btn-done-superadmin">Cerrar Panel</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
