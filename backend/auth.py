@@ -1,5 +1,5 @@
 import os
-import datetime
+from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, status, Request
@@ -24,8 +24,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
-    # Ensure sub is string or integer
-    expire = datetime.datetime.utcnow() + datetime.timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+    if "sub" in to_encode:
+        to_encode["sub"] = str(to_encode["sub"])
+    expire = datetime.now(timezone.utc) + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -41,8 +42,8 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
         raise credentials_exception
         
     token = None
-    if auth_header.startswith("Bearer ") or auth_header.startswith("bearer "):
-        token = auth_header.split(" ", 1)[1].strip()
+    if auth_header.lower().startswith("bearer "):
+        token = auth_header[7:].strip()
     else:
         token = auth_header.strip()
 
