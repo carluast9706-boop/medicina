@@ -350,5 +350,10 @@ def get_admin_stats(admin: User = Depends(get_current_superadmin), db: Session =
         ]
     }
 
-# Serve Frontend static assets from root directory
-app.mount("/", StaticFiles(directory="/Users/macos_carlos/Desktop/Medicamentos", html=True), name="static")
+# Serve Frontend static assets safely if running standalone locally
+static_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if not os.environ.get("VERCEL") and os.path.exists(os.path.join(static_dir, "index.html")):
+    try:
+        app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+    except Exception:
+        pass
