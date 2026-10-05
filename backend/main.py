@@ -1,7 +1,7 @@
 import os
 from typing import List, Optional
-from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Depends, HTTPException, status, Response
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
@@ -351,7 +351,55 @@ def get_admin_stats(admin: User = Depends(get_current_superadmin), db: Session =
         ]
     }
 
-# Root API Health Check
-@app.get("/")
-def api_root():
-    return {"message": "PharmaAlarm AI Backend is running with Neon PostgreSQL", "status": "online"}
+# =========================================================
+# SERVE FRONTEND PWA ASSETS (Root, CSS, JS, Manifest, SW)
+# =========================================================
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+@app.get("/", response_class=HTMLResponse)
+def serve_home_ui():
+    index_file = os.path.join(ROOT_DIR, "index.html")
+    if os.path.exists(index_file):
+        with open(index_file, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse(content="<h2>PharmaAlarm AI</h2><p>Cargando interfaz...</p>")
+
+@app.get("/styles.css")
+def serve_styles_css():
+    css_file = os.path.join(ROOT_DIR, "styles.css")
+    if os.path.exists(css_file):
+        with open(css_file, "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type="text/css")
+    return Response(content="", media_type="text/css")
+
+@app.get("/app.js")
+def serve_app_js():
+    js_file = os.path.join(ROOT_DIR, "app.js")
+    if os.path.exists(js_file):
+        with open(js_file, "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type="application/javascript")
+    return Response(content="", media_type="application/javascript")
+
+@app.get("/manifest.json")
+def serve_manifest_json():
+    manifest_file = os.path.join(ROOT_DIR, "manifest.json")
+    if os.path.exists(manifest_file):
+        with open(manifest_file, "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type="application/json")
+    return Response(content="{}", media_type="application/json")
+
+@app.get("/sw.js")
+def serve_service_worker():
+    sw_file = os.path.join(ROOT_DIR, "sw.js")
+    if os.path.exists(sw_file):
+        with open(sw_file, "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type="application/javascript")
+    return Response(content="", media_type="application/javascript")
+
+@app.get("/icons/icon.svg")
+def serve_icon_svg():
+    icon_file = os.path.join(ROOT_DIR, "icons", "icon.svg")
+    if os.path.exists(icon_file):
+        with open(icon_file, "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type="image/svg+xml")
+    return Response(content="", media_type="image/svg+xml")
