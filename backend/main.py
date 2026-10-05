@@ -122,10 +122,17 @@ class ChatRequest(BaseModel):
 class AdminSettingsUpdate(BaseModel):
     gemini_api_key: str
 
-# =========================================================
-# API ROUTER (Supports both /api/* and /* for Vercel compatibility)
-# =========================================================
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, Request
+
 router = APIRouter()
+
+@router.api_route("/debug", methods=["GET", "POST"])
+def api_debug(request: Request):
+    return {
+        "url": str(request.url),
+        "headers": dict(request.headers),
+        "scope_path": request.scope.get("path")
+    }
 
 @router.get("/health")
 def api_health():
